@@ -1,45 +1,62 @@
+import React from 'react';
+import  BalanceUpdater  from "./components/ui/BalanceUpdater";
 
-
+import './App.css';
+// import { Button } from "./components/ui/button";
 import { createWeb3Modal } from '@web3modal/wagmi/react'
-import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
-
-import { WagmiProvider } from 'wagmi'
-import { arbitrum, mainnet } from 'wagmi/chains'
+import { http, createConfig, WagmiProvider } from 'wagmi'
+import { mainnet, sepolia } from 'wagmi/chains'
+import { walletConnect, injected, coinbaseWallet } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// 0. Setup queryClient
+
 const queryClient = new QueryClient()
 
-// 1. Get projectId at https://cloud.walletconnect.com
-const projectId = process.env.REACT_APP_PROJECT_ID;
+const projectId = 'a771d23a9e6f8d1abfd9189a6ee510aa';
 
-
-// 2. Create wagmiConfig
 const metadata = {
   name: 'Web3Modal',
 }
+const iconUrl = metadata.icons && metadata.icons.length > 0 ? metadata.icons[0] : null;
 
-const chains = [mainnet, arbitrum];
-
-const config = defaultWagmiConfig({
-  chains, // required
-  projectId, // required
-  metadata, // required
+const config = createConfig({
+  chains: [mainnet, sepolia],
+  transports: {
+    [mainnet.id]: http(),
+    [sepolia.id]: http()
+  },
+  connectors: [
+    walletConnect({ projectId, metadata, showQrModal: false }),
+    injected({ shimDisconnect: true }),
+    coinbaseWallet({
+      appName: metadata.name,
+      appLogoUrl: iconUrl
+    })
+  ]
 })
-
 // 3. Create modal
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
 })
 
-export default function App ({ children }) {
+// import { useWeb3Modal } from '@web3modal/wagmi/react'
+
+export default function App() {
+  // const w3m = useWeb3Modal()
+
   return (
-    <WagmiProvider config={config}>
-      <w3m-button />
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </WagmiProvider>
+    <div>
+      <WagmiProvider config={config}>
+        <div>
+          {/* <Button variant="destructive" onClick={({ }) => w3m.open()}>Connect your wallet</Button> */}
+
+          <w3m-button />
+
+          <BalanceUpdater />
+        </div>
+      </WagmiProvider>
+    </div>
+
   )
 }
-
-
